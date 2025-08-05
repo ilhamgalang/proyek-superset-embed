@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Embedded</title>
+    <script src="https://unpkg.com/@superset-ui/embedded-sdk/lib/index.js"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; display: flex; flex-direction: column; align-items: center; }
+        #dashboard-container { width: 95%; height: 85vh; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+    <h1>Dashboard Penjualan Interaktif</h1>
+    <div id="dashboard-container">
+        <p style="padding: 2em; text-align: center;">Memuat dashboard dari Superset...</p>
+    </div>
+
+    <script>
+        // === KONFIGURASI - GANTI DENGAN URL ANDA ===
+        // 1. URL Backend Anda yang sudah di-deploy di Render
+        const BACKEND_API_URL = "http://localhost:5000/api/get-guest-token";
+
+        // 2. URL Superset Anda
+        const SUPERSET_URL = "https://dp-superset.cloudias79.com/";
+        // ===========================================
+
+        // Fungsi untuk memanggil backend dan mengambil guest token
+        async function getGuestToken() {
+            const response = await fetch(BACKEND_API_URL);
+            if (!response.ok) {
+                throw new Error("Gagal menghubungi server backend.");
+            }
+            const data = await response.json();
+            if (data.error) {
+                throw new Error(`Error dari backend: ${data.error}`);
+            }
+            return data.guest_token;
+        }
+
+        // Fungsi utama untuk menjalankan proses embedding
+        async function embedMyDashboard() {
+            const container = document.getElementById("dashboard-container");
+
+            try {
+                const token = await getGuestToken();
+
+                await supersetEmbeddedSdk.embedDashboard({
+                    supersetDomain: SUPERSET_URL,
+                    mountPoint: container,
+                    fetchGuestToken: () => Promise.resolve(token),
+                    dashboardUiConfig: {
+                        // Sembunyikan elemen UI Superset agar terlihat lebih menyatu
+                        hideTitle: true,
+                        hideChartControls: true,
+                        hideTab: true
+                    }
+                });
+            } catch (error) {
+                console.error(error);
+                container.innerHTML = `<p style="color: red; padding: 2em;"><b>Error:</b> ${error.message}</p>`;
+            }
+        }
+
+        // Jalankan fungsi saat halaman dimuat
+        embedMyDashboard();
+    </script>
+</body>
+</html>
